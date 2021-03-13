@@ -1,0 +1,475 @@
+---
+title: "collins_autotime_analysis"
+author: "Tony Roberts"
+date: "11/2/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, message=FALSE}
+library(tidyverse)
+library(forcats)
+library(lubridate)
+library(janitor)
+library(gt)
+library(scales)
+```
+
+```{r, message=FALSE}
+# read in autotime files
+autotime_2017 <- read_csv("/Volumes/GoogleDrive/My Drive/IE 5801/Data/table_export_DATA_2017.csv")
+autotime_2018 <- read_csv("/Volumes/GoogleDrive/My Drive/IE 5801/Data/table_export_DATA_2018.csv")
+autotime_2019 <- read_csv("/Volumes/GoogleDrive/My Drive/IE 5801/Data/table_export_DATA_2019.csv")
+autotime_2020 <- read_csv("/Volumes/GoogleDrive/My Drive/IE 5801/Data/table_export_DATA_2020_Q1_Q2_Q3.csv")
+```
+
+```{r, message=FALSE}
+# read in valuation type file
+valuation <- read_csv("/Volumes/GoogleDrive/My Drive/IE 5801/Data/export_MRP_TYPE_VALUATION_CLASS.csv")
+```
+
+```{r}
+# combine yearly labor autotime 
+autotime <- bind_rows(autotime_2017, autotime_2018, autotime_2019, autotime_2020)
+```
+
+```{r, eval=FALSE}
+# show brief summary of dataframe variables
+summary(autotime)
+glimpse(autotime)
+```
+
+```{r}
+# changing variable data formats
+autotime <- autotime %>% 
+  mutate(POST_DATE = mdy(POST_DATE),
+         HRS_CLASS = factor(HRS_CLASS),
+         TYPE = factor(TYPE),
+         PRODUCT_LINE = factor(PRODUCT_LINE),
+         SUP_EMP_NUM = as.numeric(as.character(SUP_EMP_NUM)))
+```
+
+
+```{r}
+# check for null dates
+sum(is.na(autotime$POST_DATE))
+```
+
+```{r, eval=FALSE}
+glimpse(autotime)
+summary(autotime)
+```
+
+```{r}
+# creating the area variable to group product lines
+autotime <- autotime %>% 
+  mutate(area = case_when(PRODUCT_LINE %in% c(55,57,70,71,72) ~ "ADS",
+                          PRODUCT_LINE %in% c(27,28,40,68,73,75,76,77) ~ "EMS",
+                          PRODUCT_LINE %in% c(51,52,53,56,58,59,81) ~ "Engines",
+                          PRODUCT_LINE %in% c(24,25,26,29,79) ~ "MEMS"))
+
+```
+
+```{r}
+# add adjusted quantity and corrections variable
+autotime <- autotime %>% 
+  mutate(adj_quantity = ifelse(test = HRS < 0, yes = 0, no = QUANTITY),
+         corrections = ifelse(test = HRS < 0, yes = 1, no = 0))
+```
+
+
+```{r, eval=FALSE}
+# look at the distribution of HRS by Area and Product Line
+autotime %>%
+  filter(area == "ADS") %>% 
+  ggplot(aes(x = HRS)) +
+  geom_histogram(binwidth = 0.1) + 
+#  scale_x_continuous(limits = c(-5, 8), breaks = seq(-8,8, by = 0.5)) +
+  scale_y_continuous(labels = comma) +
+  facet_wrap(vars(PRODUCT_LINE), scales = "free")
+
+```
+
+
+```{r, eval=FALSE}
+# look at the distribution of HRS and Quantity by Area and Product Line
+autotime %>%
+  ggplot(aes(x = adj_quantity)) +
+  geom_histogram(binwidth = 1) + 
+  scale_x_continuous(limits = c(0, 100), breaks = seq(0,100, by = 10)) +
+  scale_y_continuous(labels = comma)
+
+```
+
+
+
+```{r, message=FALSE}
+# look at total factory yearly totals
+autotime %>% 
+  mutate(year = year(POST_DATE),
+         SUP_EMP_NUM = ifelse(SUP_EMP_NUM > 40000000, NA, SUP_EMP_NUM)) %>%
+  group_by(year) %>%
+  summarise(Hours = comma(sum(HRS)),
+            Quantity = comma(sum(adj_quantity, na.rm = TRUE)),
+            Employees = n_distinct(EMP_NUM),
+            Work_Orders = comma(n_distinct(WORK_ORDER)),
+            Supervisors = n_distinct(SUP_EMP_NUM),
+            product_lines = n_distinct(PRODUCT_LINE),
+            product_cells = n_distinct(PRODUCT_CELL_ID),
+            Operations = n_distinct(OPERATION_NUM),
+            Documents = comma(n_distinct(DOC)),
+            Parts = comma(n_distinct(ROUTING_GROUP_ID))) %>% 
+  gt() %>% 
+  tab_header(
+    title = "Factory-at-a-Glance") %>% 
+  cols_label(year= "Year",
+             Work_Orders = "Work Orders",
+             product_lines = "Product Lines",
+             product_cells = "Product Cells",
+             Parts = "Distinct Parts")
+```
+
+```{r}
+# subset for engines manufacturing
+engines <- autotime %>% 
+  filter(area == "Engines")
+```
+
+```{r}
+# subset for engines manufacturing
+ads <- autotime %>% 
+  filter(area == "ADS")
+```
+
+
+```{r, message=FALSE}
+# look at total engines area yearly totals
+engines_summary <- engines %>%
+  mutate(year = year(POST_DATE),
+         SUP_EMP_NUM = ifelse(SUP_EMP_NUM > 40000000, NA, SUP_EMP_NUM)) %>% 
+  group_by(year) %>%
+  summarise(Hours = (sum(HRS)),
+            Quantity = (sum(adj_quantity, na.rm = TRUE)),
+            Employees = n_distinct(EMP_NUM),
+            Work_Orders = (n_distinct(WORK_ORDER)),
+            Supervisors = n_distinct(SUP_EMP_NUM),
+            product_lines = n_distinct(PRODUCT_LINE),
+            product_cells = n_distinct(PRODUCT_CELL_ID),
+            Operations = n_distinct(OPERATION_NUM),
+            Documents = (n_distinct(DOC)),
+            Parts = (n_distinct(ROUTING_GROUP_ID))) 
+ 
+engines_summary %>%   
+  gt() %>% 
+  tab_header(title = "Engines Overall Totals") %>% 
+  cols_label(year= "Year",
+             Hours = "Labor Hours",
+             Work_Orders = "Work Orders",
+             product_lines = "Product Lines",
+             product_cells = "Product Cells") %>% 
+  fmt_number(columns = vars(Hours, Quantity, Work_Orders), decimals = 0)
+
+```
+
+```{r, message=FALSE}
+# look at total engines area yearly totals
+ads_summary <- ads %>%
+  mutate(year = year(POST_DATE),
+         SUP_EMP_NUM = ifelse(SUP_EMP_NUM > 40000000, NA, SUP_EMP_NUM)) %>% 
+  group_by(year) %>%
+  summarise(Hours = (sum(HRS)),
+            Quantity = (sum(adj_quantity, na.rm = TRUE)),
+            Employees = n_distinct(EMP_NUM),
+            Work_Orders = (n_distinct(WORK_ORDER)),
+            Supervisors = n_distinct(SUP_EMP_NUM),
+            product_lines = n_distinct(PRODUCT_LINE),
+            product_cells = n_distinct(PRODUCT_CELL_ID),
+            Operations = n_distinct(OPERATION_NUM),
+            Documents = (n_distinct(DOC)),
+            Parts = (n_distinct(ROUTING_GROUP_ID))) 
+ 
+ads_summary %>%   
+  gt() %>% 
+  tab_header(title = "ADS Overall Totals") %>% 
+  cols_label(year= "Year",
+             Hours = "Labor Hours",
+             Work_Orders = "Work Orders",
+             product_lines = "Product Lines",
+             product_cells = "Product Cells") %>% 
+  fmt_number(columns = vars(Hours, Quantity, Work_Orders), decimals = 0)
+
+```
+
+```{r, message=FALSE}
+area_summary <- autotime %>%
+  group_by(area) %>% 
+  summarise(mean_hrs = mean(HRS, na.rm = TRUE),
+            total_hrs = sum(HRS, na.rm = TRUE ),
+            mean_qty = mean(adj_quantity, na.rm = TRUE),
+            sd_qty = sd(adj_quantity, na.rm = TRUE),
+            total_qty = sum(adj_quantity, na.rm = TRUE),
+            total_work = n_distinct(WORK_ORDER),
+            total_parts = n_distinct(ROUTING_GROUP_ID),
+            total_docs = n_distinct(DOC),
+            total_corr = sum(corrections),
+            total_ops = n_distinct(OPERATION_NUM)) 
+
+area_summary %>% 
+  gt() %>% 
+      tab_header(title = "Production Area Summary") %>% 
+      cols_label(area= "Area",
+             mean_hrs = "Avg. Labor Hours",
+             total_hrs = "Total Labor Hours",
+             mean_qty = "Avg. Quantity",
+             sd_qty = "Std.Dev Quantity",
+             total_qty = "Total Quantity",
+             total_parts = "Distinct Parts",
+             total_docs = "Distinct Work instructions",
+             total_corr = "Total Corrections",
+             total_ops = "Total No. of Operations",
+             total_work = "Total Work Orders") %>% 
+  fmt_number(columns = vars(mean_hrs, total_hrs, mean_qty, 
+                            sd_qty, total_corr)) %>% 
+  fmt_number(columns = vars(total_work, total_parts, total_corr, total_qty),
+            decimals = 0)
+  
+```
+```{r}
+# engines area summary of hours, qty, parts and work orders percent total of areas
+area_summary %>%
+  mutate(percent_hrs = total_hrs/sum(total_hrs)*100,
+         percent_qty = total_qty/sum(total_qty)*100,
+         percent_work = total_work/sum(total_work)*100,
+         percent_parts = total_parts/sum(total_parts)*100,
+         percent_operations = total_ops/sum(total_ops)*100) %>%
+  filter(area == "Engines") %>% 
+  select(area,percent_hrs, percent_qty, percent_work, percent_parts) 
+```
+
+```{r}
+# engines area summary of hours, qty, parts and work orders percent total of areas
+area_summary %>%
+  mutate(percent_hrs = total_hrs/sum(total_hrs)*100,
+         percent_qty = total_qty/sum(total_qty)*100,
+         percent_work = total_work/sum(total_work)*100,
+         percent_parts = total_parts/sum(total_parts)*100,
+         percent_ops = total_ops/sum(total_ops)*100) %>%
+  filter(area == "ADS") %>% 
+  select(area,percent_hrs, percent_qty, percent_work, percent_parts, percent_ops)
+  # gt() %>% 
+  # tab_header(title = "ADS Overall") %>% 
+  # cols_label(area = "Area",
+  #            percent_hrs = "% of Total Hrs",
+  #            percent_work = "% of Total Work Orders",
+  #            percent_parts = "% of Total Parts",
+  #            percent_ops = "% of Total Operations")
+```
+
+```{r}
+engines_prod_lines <- engines %>% 
+  group_by(area, PRODUCT_LINE) %>% 
+  summarise(total_hrs = sum(HRS, na.rm = TRUE),
+            total_qty = sum(adj_quantity, na.rm = TRUE),
+            throughput = total_qty/total_hrs,
+            no_of_operations = n_distinct(OPERATION_NUM),
+            no_of_parts = n_distinct(ROUTING_GROUP_ID))
+
+engines_prod_lines
+```
+
+```{r}
+autotime %>% 
+  group_by(area, PRODUCT_LINE) %>% 
+  summarise(total_hrs = sum(HRS, na.rm = TRUE),
+            total_qty = sum(adj_quantity, na.rm = TRUE),
+            throughput = total_qty/total_hrs,
+            no_of_operations = n_distinct(OPERATION_NUM),
+            no_of_parts = n_distinct(ROUTING_GROUP_ID)) %>% 
+  gt()
+
+```
+
+```{r}
+# look at hours and quantity of operations per product line
+engines %>% 
+  group_by(PRODUCT_LINE,OPERATION_NUM) %>%
+  summarise(total_hrs = sum(HRS),
+            total_qty = sum(adj_quantity)) %>% 
+  mutate(OPERATION_NUM = str_remove(OPERATION_NUM, "^0+")) %>% 
+  arrange(desc(total_qty))
+  
+```
+
+
+```{r}
+engines_time <- engines %>% 
+  group_by(PRODUCT_LINE, WORK_ORDER) %>% 
+  summarise(first = first(POST_DATE, order_by = WORK_ORDER),
+            last = last(POST_DATE, order_by = WORK_ORDER),
+            cycle_time = sum(HRS),
+            lead_time = as.numeric(difftime(last,first, units = "hours")),
+            lead_time = ifelse(lead_time == 0, cycle_time, lead_time)) %>%
+  mutate(non_value_time = lead_time - cycle_time)
+
+engines_time
+```
+
+
+```{r}
+# work order cycle time, lead time and non-value added time
+engines_time %>% 
+  group_by(PRODUCT_LINE) %>% 
+  summarise(mean_nonvalue_time = mean(non_value_time, na.rm = TRUE),
+            mean_cycle_time = mean(cycle_time, na.rm = TRUE),
+            mean_lead_time = mean(lead_time, na.rm = TRUE)) 
+```
+
+```{r}
+# breakdown of work order cycle time for each operations
+engines_ops_time <- engines %>% 
+  group_by(PRODUCT_LINE, OPERATION_NUM, WORK_ORDER) %>% 
+  summarise(first = first(POST_DATE, order_by = WORK_ORDER),
+            last = last(POST_DATE, order_by = WORK_ORDER),
+            cycle_time = sum(HRS),
+            lead_time = as.numeric(difftime(last,first, units = "hours")),
+            lead_time = ifelse(lead_time == 0, cycle_time, lead_time)) %>%
+  mutate(non_value_time = lead_time - cycle_time)
+
+engines_ops_time
+```
+
+
+```{r}
+engines_ops_time %>% 
+  group_by(PRODUCT_LINE, OPERATION_NUM) %>% 
+  summarise(ops_nonvalue_time = mean(non_value_time, na.rm = TRUE),
+            ops_cycle_time = mean(cycle_time, na.rm = TRUE),
+            ops_lead_time = mean(lead_time, na.rm = TRUE)) %>% 
+  arrange(desc(ops_nonvalue_time), .by_group = TRUE) %>% 
+  top_n(n = 5, wt = ops_nonvalue_time)
+  
+```
+
+```{r}
+# add the valuation class to the engines autotime dataset
+engines_parts <- engines %>% 
+  left_join(y = valuation, by = "ROUTING_GROUP_ID")
+```
+
+
+
+```{r}
+engines_parts %>% 
+  filter(HRS > 0) %>% 
+  ggplot(aes(x = factor(VALUATION_CLASS), y = HRS)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  scale_y_continuous(label = comma)
+```
+
+
+```{r}
+engines_parts %>% 
+  ggplot(aes(x = factor(VALUATION_CLASS), y = adj_quantity)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  scale_y_continuous(label = comma) 
+```
+
+
+```{r}
+# total hours and qty by part type, parts and product line
+engines_parts %>% 
+  group_by(PRODUCT_LINE, ROUTING_GROUP_ID, VALUATION_CLASS) %>%
+  summarise(total_hrs = sum(HRS),
+            total_qty = sum(adj_quantity)) %>% 
+  arrange(desc(total_qty))
+
+```
+
+
+```{r}
+# engines parts operation time and lead time
+engines_parts_time <- engines_parts %>% 
+  group_by(PRODUCT_LINE, ROUTING_GROUP_ID) %>%
+  summarise(mean_ops_time = mean(HRS)) %>%
+  arrange(desc(mean_ops_time), .by_group = TRUE) %>% 
+  top_n(n = 10, wt = mean_ops_time) %>% 
+  left_join(y = valuation, by = "ROUTING_GROUP_ID")
+
+engines_parts_time
+
+``` 
+
+
+
+```{r}
+# engines parts cycle time, lead time and standard deviation and variation
+engines_cov <- engines %>% 
+  group_by(PRODUCT_LINE, ROUTING_GROUP_ID) %>%
+  summarise(mean_parts_ops_time = mean(HRS),
+            var_parts_ops_time = var(HRS),
+            std_dev_parts_ops_time = sd(HRS),
+            cov_parts = (std_dev_parts_ops_time/mean_parts_ops_time)) %>%
+  arrange(desc(cov_parts), .by_group = TRUE) %>% 
+  top_n(n = 10, wt = cov_parts)
+
+engines_cov
+```
+
+```{r}
+# parts that have high coefficient of variance and high processing time
+engines_cov %>% 
+  semi_join(engines_parts_time, by = "ROUTING_GROUP_ID") %>% 
+  left_join(y = valuation, by = "ROUTING_GROUP_ID") %>% 
+  gt()
+```
+
+
+```{r}
+# calculate average demand by product line
+engines_demand <- autotime %>% 
+  mutate(year = year(POST_DATE)) %>% 
+  filter(area == "Engines") %>% 
+  group_by(year, PRODUCT_LINE) %>%
+  summarise(Hours = sum(HRS),
+            Quantity = sum(adj_quantity, na.rm = TRUE),
+            Work_orders = n_distinct(WORK_ORDER))
+
+engines_demand
+```
+
+
+```{r}
+# define some time parameters
+shift_length = 8
+breaks = 1.5
+no_of_shifts = 2
+planned_prod_time = shift_length - breaks
+weeks = 52
+
+yrly_avail_time = planned_prod_time * no_of_shifts * weeks * shift_length
+```
+
+
+
+```{r}
+# calculate product line takt time available time/demand
+engines_demand %>% 
+  group_by(PRODUCT_LINE) %>% 
+  summarise(parts_demand = mean(Quantity),
+            work_demand = mean(Work_orders),
+            parts_takt_time = parts_demand/yrly_avail_time,
+            work_takt_time =  work_demand/yrly_avail_time)
+
+```
+
+
+```{r}
+# takt time vs. actual output
+
+```
+
+

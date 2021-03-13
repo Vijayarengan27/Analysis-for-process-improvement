@@ -1,0 +1,512 @@
+total_docs = n_distinct(DOC),
+corrections = QUANTITY - adj_quantity)
+area_summary
+area_summary <- autotime %>%
+group_by(area) %>%
+summarise(mean_hrs = mean(HRS, na.rm = TRUE),
+total_hrs = sum(HRS, na.rm = TRUE ),
+mean_qty = mean(adj_quantity, na.rm = TRUE),
+total_qty = sum(adj_quantity, na.rm = TRUE),
+total_work_orders = n_distinct(WORK_ORDER),
+total_parts = n_distinct(ROUTING_GROUP_ID),
+total_docs = n_distinct(DOC))
+area_summary
+# add adjusted quantity and corrections variable
+autotime <- autotime %>%
+mutate(adj_quantity = ifelse(test = HRS < 0, yes = 0, no = QUANTITY),
+corrections = ifelse(test = HRS < 0, yes = 1, no = 0))
+# look at total factory yearly totals
+autotime %>%
+mutate(year = year(POST_DATE)) %>%
+group_by(year) %>%
+summarise(Hours = comma(sum(HRS)),
+Quantity = comma(sum(adj_quantity, na.rm = TRUE)),
+Employees = n_distinct(EMP_NUM),
+Work_Orders = comma(n_distinct(WORK_ORDER)),
+Supervisors = n_distinct(SUP_EMP_NUM),
+product_lines = n_distinct(PRODUCT_LINE),
+product_cells = n_distinct(PRODUCT_CELL_ID),
+Operations = n_distinct(OPERATION_NUM),
+Documents = comma(n_distinct(DOC)),
+Parts = comma(n_distinct(ROUTING_GROUP_ID))) %>%
+gt() %>%
+tab_header(
+title = "Factory-at-a-Glance") %>%
+cols_label(year= "Year",
+Work_Orders = "Work Orders",
+product_lines = "Product Lines",
+product_cells = "Product Cells")
+# subset for engines manufacturing
+engines <- autotime %>%
+filter(area == "Engines")
+# look at total engines area yearly totals
+engines %>%
+mutate(year = year(POST_DATE)) %>%
+group_by(year) %>%
+summarise(Hours = comma(sum(HRS)),
+Quantity = comma(sum(adj_quantity, na.rm = TRUE)),
+Employees = n_distinct(EMP_NUM),
+Work_Orders = comma(n_distinct(WORK_ORDER)),
+Supervisors = n_distinct(SUP_EMP_NUM),
+product_lines = n_distinct(PRODUCT_LINE),
+product_cells = n_distinct(PRODUCT_CELL_ID),
+Operations = n_distinct(OPERATION_NUM),
+Documents = comma(n_distinct(DOC)),
+Parts = comma(n_distinct(ROUTING_GROUP_ID))) %>%
+gt() %>%
+tab_header(
+title = "Engines Overall Totals") %>%
+cols_label(year= "Year",
+Work_Orders = "Work Orders",
+product_lines = "Product Lines",
+product_cells = "Product Cells")
+area_summary <- autotime %>%
+group_by(area) %>%
+summarise(mean_hrs = mean(HRS, na.rm = TRUE),
+total_hrs = sum(HRS, na.rm = TRUE ),
+mean_qty = mean(adj_quantity, na.rm = TRUE),
+total_qty = sum(adj_quantity, na.rm = TRUE),
+total_work_orders = n_distinct(WORK_ORDER),
+total_parts = n_distinct(ROUTING_GROUP_ID),
+total_docs = n_distinct(DOC))
+area_summary
+area_summary <- autotime %>%
+group_by(area) %>%
+summarise(mean_hrs = mean(HRS, na.rm = TRUE),
+total_hrs = sum(HRS, na.rm = TRUE ),
+mean_qty = mean(adj_quantity, na.rm = TRUE),
+total_qty = sum(adj_quantity, na.rm = TRUE),
+total_work_orders = n_distinct(WORK_ORDER),
+total_parts = n_distinct(ROUTING_GROUP_ID),
+total_docs = n_distinct(DOC),
+total_corr = sum(corrections))
+area_summary
+area_summary <- autotime %>%
+group_by(area) %>%
+summarise(mean_hrs = mean(HRS, na.rm = TRUE),
+total_hrs = sum(HRS, na.rm = TRUE ),
+mean_qty = mean(adj_quantity, na.rm = TRUE),
+total_qty = sum(adj_quantity, na.rm = TRUE),
+total_wo = n_distinct(WORK_ORDER),
+total_parts = n_distinct(ROUTING_GROUP_ID),
+total_docs = n_distinct(DOC),
+total_corr = sum(corrections))
+area_summary
+area_summary <- autotime %>%
+group_by(area) %>%
+summarise(mean_hrs = mean(HRS, na.rm = TRUE),
+total_hrs = sum(HRS, na.rm = TRUE ),
+mean_qty = mean(adj_quantity, na.rm = TRUE),
+total_qty = sum(adj_quantity, na.rm = TRUE),
+total_work = n_distinct(WORK_ORDER),
+total_parts = n_distinct(ROUTING_GROUP_ID),
+total_docs = n_distinct(DOC),
+total_corr = sum(corrections))
+area_summary
+area_summary %>%
+mutate(percent_hrs = total_hrs/sum(total_hrs),
+percent_qty = total_qty/sum(total_qty),
+percent_work = total_wo/sum(total_work)) %>%
+filter(area == "Engines") %>%
+select(percent_hrs, percent_qty, percent_work)
+area_summary %>%
+mutate(percent_hrs = total_hrs/sum(total_hrs),
+percent_qty = total_qty/sum(total_qty),
+percent_work = total_work/sum(total_work)) %>%
+filter(area == "Engines") %>%
+select(percent_hrs, percent_qty, percent_work)
+area_summary %>%
+mutate(percent_hrs = total_hrs/sum(total_hrs)*100,
+percent_qty = total_qty/sum(total_qty)*100,
+percent_work = total_work/sum(total_work)*100) %>%
+filter(area == "Engines") %>%
+select(area,percent_hrs, percent_qty, percent_work)
+area_summary %>%
+mutate(percent_hrs = total_hrs/sum(total_hrs)*100,
+percent_qty = total_qty/sum(total_qty)*100,
+percent_work = total_work/sum(total_work)*100,
+percent_parts = total_parts/sum(total_parts)*100) %>%
+filter(area == "Engines") %>%
+select(area,percent_hrs, percent_qty, percent_work)
+area_summary %>%
+mutate(percent_hrs = total_hrs/sum(total_hrs)*100,
+percent_qty = total_qty/sum(total_qty)*100,
+percent_work = total_work/sum(total_work)*100,
+percent_parts = total_parts/sum(total_parts)*100) %>%
+filter(area == "Engines") %>%
+select(area,percent_hrs, percent_qty, percent_work, percent_parts)
+engines %>%
+group_by(area, PRODUCT_LINE)
+engines %>%
+group_by(area, PRODUCT_LINE) %>%
+summarise(total_hrs = sum(HRS, na.rm = TRUE))
+engines %>%
+group_by(area, PRODUCT_LINE) %>%
+summarise(total_hrs = sum(HRS, na.rm = TRUE),
+total_qty = sum(adj_quantity, na.rm = TRUE))
+engines %>%
+group_by(area, PRODUCT_LINE) %>%
+summarise(total_hrs = sum(HRS, na.rm = TRUE),
+total_qty = sum(adj_quantity, na.rm = TRUE),
+throughput = total_qty/total_hrs)
+library(tidyverse)
+library(forcats)
+library(lubridate)
+library(janitor)
+library(gt)
+library(scales)
+engines %>%
+group_by(PRODUCT_LINE,OPERATION_NUM)
+engines %>%
+group_by(PRODUCT_LINE,OPERATION_NUM) %>%
+summarise(total_hrs = sum(HRS))
+# changing variable data formats
+autotime <- autotime %>%
+mutate(POST_DATE = mdy(POST_DATE),
+HRS_CLASS = factor(HRS_CLASS),
+TYPE = factor(TYPE),
+PRODUCT_LINE = factor(PRODUCT_LINE),
+OPERATION_NUM = str_remove(OPERATION_NUM, "^0+"))
+# changing variable data formats
+autotime <- autotime %>%
+mutate(POST_DATE = mdy(POST_DATE),
+HRS_CLASS = factor(HRS_CLASS),
+TYPE = factor(TYPE),
+PRODUCT_LINE = factor(PRODUCT_LINE),
+OPERATION_NUM = str_remove(OPERATION_NUM, "^0+"))
+glimpse(autotime)
+summary(autotime)
+# changing variable data formats
+autotime <- autotime %>%
+mutate(POST_DATE = mdy(POST_DATE),
+HRS_CLASS = factor(HRS_CLASS),
+TYPE = factor(TYPE),
+PRODUCT_LINE = factor(PRODUCT_LINE))
+# check for null dates
+sum(is.na(autotime$POST_DATE))
+engines %>%
+group_by(PRODUCT_LINE,OPERATION_NUM) %>%
+summarise(total_hrs = sum(HRS)) %>%
+mutate(OPERATION_NUM = str_remove(OPERATION_NUM, "^0+"))
+engines %>%
+group_by(PRODUCT_LINE,OPERATION_NUM) %>%
+summarise(total_hrs = sum(HRS)) %>%
+mutate(OPERATION_NUM = str_remove(OPERATION_NUM, "^0+")) %>%
+arrange(desc(total_hrs))
+View(autotime)
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(forcats)
+library(lubridate)
+library(janitor)
+library(gt)
+library(scales)
+# read in autotime files
+autotime_2017 <- read_csv("/Volumes/GoogleDrive/My Drive/IE 5801/Data/table_export_DATA_2017.csv")
+autotime_2018 <- read_csv("/Volumes/GoogleDrive/My Drive/IE 5801/Data/table_export_DATA_2018.csv")
+autotime_2019 <- read_csv("/Volumes/GoogleDrive/My Drive/IE 5801/Data/table_export_DATA_2019.csv")
+autotime_2020 <- read_csv("/Volumes/GoogleDrive/My Drive/IE 5801/Data/table_export_DATA_2020_Q1_Q2_Q3.csv")
+# read in valuation type file
+valuation <- read_csv("/Volumes/GoogleDrive/My Drive/IE 5801/Data/export_MRP_TYPE_VALUATION_CLASS.csv")
+# combine yearly labor autotime
+autotime <- bind_rows(autotime_2017, autotime_2018, autotime_2019, autotime_2020)
+# changing variable data formats
+autotime <- autotime %>%
+mutate(POST_DATE = mdy(POST_DATE),
+HRS_CLASS = factor(HRS_CLASS),
+TYPE = factor(TYPE),
+PRODUCT_LINE = factor(PRODUCT_LINE),
+SUP_EMP_NUM = as.numeric(as.character(SUP_EMP_NUM)))
+# check for null dates
+sum(is.na(autotime$POST_DATE))
+# creating the area variable to group product lines
+autotime <- autotime %>%
+mutate(area = case_when(PRODUCT_LINE %in% c(55,57,70,71,72) ~ "ADS",
+PRODUCT_LINE %in% c(27,28,40,68,73,75,76,77) ~ "EMS",
+PRODUCT_LINE %in% c(51,52,53,56,58,59,81) ~ "Engines",
+PRODUCT_LINE %in% c(24,25,26,29,79) ~ "MEMS"))
+# add adjusted quantity and corrections variable
+autotime <- autotime %>%
+mutate(adj_quantity = ifelse(test = HRS < 0, yes = 0, no = QUANTITY),
+corrections = ifelse(test = HRS < 0, yes = 1, no = 0))
+# look at total factory yearly totals
+autotime %>%
+mutate(year = year(POST_DATE),
+SUP_EMP_NUM = ifelse(SUP_EMP_NUM > 40000000, NA, SUP_EMP_NUM)) %>%
+group_by(year) %>%
+summarise(Hours = comma(sum(HRS)),
+Quantity = comma(sum(adj_quantity, na.rm = TRUE)),
+Employees = n_distinct(EMP_NUM),
+Work_Orders = comma(n_distinct(WORK_ORDER)),
+Supervisors = n_distinct(SUP_EMP_NUM),
+product_lines = n_distinct(PRODUCT_LINE),
+product_cells = n_distinct(PRODUCT_CELL_ID),
+Operations = n_distinct(OPERATION_NUM),
+Documents = comma(n_distinct(DOC)),
+Parts = comma(n_distinct(ROUTING_GROUP_ID))) %>%
+gt() %>%
+tab_header(
+title = "Factory-at-a-Glance") %>%
+cols_label(year= "Year",
+Work_Orders = "Work Orders",
+product_lines = "Product Lines",
+product_cells = "Product Cells",
+Parts = "Distinct Parts")
+# look at total factory yearly totals
+autotime %>%
+mutate(year = year(POST_DATE),
+SUP_EMP_NUM = ifelse(SUP_EMP_NUM > 40000000, NA, SUP_EMP_NUM)) %>%
+group_by(year) %>%
+summarise(Hours = comma(sum(HRS)),
+Quantity = comma(sum(adj_quantity, na.rm = TRUE)),
+Employees = n_distinct(EMP_NUM),
+Work_Orders = comma(n_distinct(WORK_ORDER)),
+Supervisors = n_distinct(SUP_EMP_NUM),
+product_lines = n_distinct(PRODUCT_LINE),
+product_cells = n_distinct(PRODUCT_CELL_ID),
+Operations = n_distinct(OPERATION_NUM),
+Documents = comma(n_distinct(DOC)),
+Parts = comma(n_distinct(ROUTING_GROUP_ID))) %>%
+gt() %>%
+tab_header(
+title = "Factory-at-a-Glance") %>%
+cols_label(year= "Year",
+Work_Orders = "Work Orders",
+product_lines = "Product Lines",
+product_cells = "Product Cells",
+Parts = "Distinct Parts")
+# subset for engines manufacturing
+engines <- autotime %>%
+filter(area == "Engines")
+# subset for engines manufacturing
+ads <- autotime %>%
+filter(area == "ADS")
+# look at total engines area yearly totals
+ads_summary <- ads %>%
+mutate(year = year(POST_DATE),
+SUP_EMP_NUM = ifelse(SUP_EMP_NUM > 40000000, NA, SUP_EMP_NUM)) %>%
+group_by(year) %>%
+summarise(Hours = (sum(HRS)),
+Quantity = (sum(adj_quantity, na.rm = TRUE)),
+Employees = n_distinct(EMP_NUM),
+Work_Orders = (n_distinct(WORK_ORDER)),
+Supervisors = n_distinct(SUP_EMP_NUM),
+product_lines = n_distinct(PRODUCT_LINE),
+product_cells = n_distinct(PRODUCT_CELL_ID),
+Operations = n_distinct(OPERATION_NUM),
+Documents = (n_distinct(DOC)),
+Parts = (n_distinct(ROUTING_GROUP_ID)))
+engines_summary %>%
+gt() %>%
+tab_header(title = "ADS Overall Totals") %>%
+cols_label(year= "Year",
+Hours = "Labor Hours",
+Work_Orders = "Work Orders",
+product_lines = "Product Lines",
+product_cells = "Product Cells") %>%
+fmt_number(columns = vars(Hours, Quantity, Work_Orders), decimals = 0)
+# look at total engines area yearly totals
+ads_summary <- ads %>%
+mutate(year = year(POST_DATE),
+SUP_EMP_NUM = ifelse(SUP_EMP_NUM > 40000000, NA, SUP_EMP_NUM)) %>%
+group_by(year) %>%
+summarise(Hours = (sum(HRS)),
+Quantity = (sum(adj_quantity, na.rm = TRUE)),
+Employees = n_distinct(EMP_NUM),
+Work_Orders = (n_distinct(WORK_ORDER)),
+Supervisors = n_distinct(SUP_EMP_NUM),
+product_lines = n_distinct(PRODUCT_LINE),
+product_cells = n_distinct(PRODUCT_CELL_ID),
+Operations = n_distinct(OPERATION_NUM),
+Documents = (n_distinct(DOC)),
+Parts = (n_distinct(ROUTING_GROUP_ID)))
+ads_summary %>%
+gt() %>%
+tab_header(title = "ADS Overall Totals") %>%
+cols_label(year= "Year",
+Hours = "Labor Hours",
+Work_Orders = "Work Orders",
+product_lines = "Product Lines",
+product_cells = "Product Cells") %>%
+fmt_number(columns = vars(Hours, Quantity, Work_Orders), decimals = 0)
+# engines area summary of hours, qty, parts and work orders percent total of areas
+area_summary %>%
+mutate(percent_hrs = total_hrs/sum(total_hrs)*100,
+percent_qty = total_qty/sum(total_qty)*100,
+percent_work = total_work/sum(total_work)*100,
+percent_parts = total_parts/sum(total_parts)*100) %>%
+filter(area == "ADS") %>%
+select(area,percent_hrs, percent_qty, percent_work, percent_parts)
+area_summary <- autotime %>%
+group_by(area) %>%
+summarise(mean_hrs = mean(HRS, na.rm = TRUE),
+total_hrs = sum(HRS, na.rm = TRUE ),
+mean_qty = mean(adj_quantity, na.rm = TRUE),
+sd_qty = sd(adj_quantity, na.rm = TRUE),
+total_qty = sum(adj_quantity, na.rm = TRUE),
+total_work = n_distinct(WORK_ORDER),
+total_parts = n_distinct(ROUTING_GROUP_ID),
+total_docs = n_distinct(DOC),
+total_corr = sum(corrections),
+total_ops = n_distinct(OPERATION_NUM))
+area_summary %>%
+gt() %>%
+tab_header(title = "Production Area Summary") %>%
+cols_label(area= "Area",
+mean_hrs = "Avg. Labor Hours",
+total_hrs = "Total Labor Hours",
+mean_qty = "Avg. Quantity",
+sd_qty = "Std.Dev Quantity",
+total_qty = "Total Quantity",
+total_parts = "Distinct Parts",
+total_docs = "Distinct Work instructions",
+total_corr = "Total Corrections",
+total_ops = "Total No. of Operations",
+total_work = "Total Work Orders") %>%
+fmt_number(columns = vars(mean_hrs, total_hrs, mean_qty,
+sd_qty, total_corr)) %>%
+fmt_number(columns = vars(total_work, total_parts, total_corr, total_qty),
+decimals = 0)
+# engines area summary of hours, qty, parts and work orders percent total of areas
+area_summary %>%
+mutate(percent_hrs = total_hrs/sum(total_hrs)*100,
+percent_qty = total_qty/sum(total_qty)*100,
+percent_work = total_work/sum(total_work)*100,
+percent_parts = total_parts/sum(total_parts)*100) %>%
+filter(area == "Engines") %>%
+select(area,percent_hrs, percent_qty, percent_work, percent_parts)
+# engines area summary of hours, qty, parts and work orders percent total of areas
+area_summary %>%
+mutate(percent_hrs = total_hrs/sum(total_hrs)*100,
+percent_qty = total_qty/sum(total_qty)*100,
+percent_work = total_work/sum(total_work)*100,
+percent_parts = total_parts/sum(total_parts)*100) %>%
+filter(area == "ADS") %>%
+select(area,percent_hrs, percent_qty, percent_work, percent_parts)
+# engines area summary of hours, qty, parts and work orders percent total of areas
+area_summary %>%
+mutate(percent_hrs = total_hrs/sum(total_hrs)*100,
+percent_qty = total_qty/sum(total_qty)*100,
+percent_work = total_work/sum(total_work)*100,
+percent_parts = total_parts/sum(total_parts)*100,
+percent_employees = total_ops/sum(total_ops)*100) %>%
+filter(area == "Engines") %>%
+select(area,percent_hrs, percent_qty, percent_work, percent_parts)
+# engines area summary of hours, qty, parts and work orders percent total of areas
+area_summary %>%
+mutate(percent_hrs = total_hrs/sum(total_hrs)*100,
+percent_qty = total_qty/sum(total_qty)*100,
+percent_work = total_work/sum(total_work)*100,
+percent_parts = total_parts/sum(total_parts)*100,
+percent_employees = total_ops/sum(total_ops)*100) %>%
+filter(area == "ADS") %>%
+select(area,percent_hrs, percent_qty, percent_work, percent_parts)
+# engines area summary of hours, qty, parts and work orders percent total of areas
+area_summary %>%
+mutate(percent_hrs = total_hrs/sum(total_hrs)*100,
+percent_qty = total_qty/sum(total_qty)*100,
+percent_work = total_work/sum(total_work)*100,
+percent_parts = total_parts/sum(total_parts)*100,
+percent_employees = total_ops/sum(total_ops)*100) %>%
+filter(area == "ADS") %>%
+select(area,percent_hrs, percent_qty, percent_work, percent_parts, percent_employees)
+# engines area summary of hours, qty, parts and work orders percent total of areas
+area_summary %>%
+mutate(percent_hrs = total_hrs/sum(total_hrs)*100,
+percent_qty = total_qty/sum(total_qty)*100,
+percent_work = total_work/sum(total_work)*100,
+percent_parts = total_parts/sum(total_parts)*100,
+percent_employees = total_ops/sum(total_ops)*100) %>%
+filter(area == "ADS") %>%
+select(area,percent_hrs, percent_qty, percent_work, percent_parts, percent_employees) %>%
+gt()
+# engines area summary of hours, qty, parts and work orders percent total of areas
+area_summary %>%
+mutate(percent_hrs = total_hrs/sum(total_hrs)*100,
+percent_qty = total_qty/sum(total_qty)*100,
+percent_work = total_work/sum(total_work)*100,
+percent_parts = total_parts/sum(total_parts)*100,
+percent_operations = total_ops/sum(total_ops)*100) %>%
+filter(area == "ADS") %>%
+select(area,percent_hrs, percent_qty, percent_work, percent_parts, percent_ops) %>%
+gt() %>%
+cols_label(area = "Area",
+percent_hrs = "% of Total Hrs",
+percent_work = "% of Total Work Orders",
+percent_parts = "% of Total Parts",
+percent_ops = "% of Total Operations") %>%
+fmt_percent(columns = vars(everything()))
+# engines area summary of hours, qty, parts and work orders percent total of areas
+area_summary %>%
+mutate(percent_hrs = total_hrs/sum(total_hrs)*100,
+percent_qty = total_qty/sum(total_qty)*100,
+percent_work = total_work/sum(total_work)*100,
+percent_parts = total_parts/sum(total_parts)*100,
+percent_ops = total_ops/sum(total_ops)*100) %>%
+filter(area == "ADS") %>%
+select(area,percent_hrs, percent_qty, percent_work, percent_parts, percent_ops) %>%
+gt() %>%
+cols_label(area = "Area",
+percent_hrs = "% of Total Hrs",
+percent_work = "% of Total Work Orders",
+percent_parts = "% of Total Parts",
+percent_ops = "% of Total Operations") %>%
+fmt_percent(columns = vars(everything()))
+# engines area summary of hours, qty, parts and work orders percent total of areas
+area_summary %>%
+mutate(percent_hrs = total_hrs/sum(total_hrs)*100,
+percent_qty = total_qty/sum(total_qty)*100,
+percent_work = total_work/sum(total_work)*100,
+percent_parts = total_parts/sum(total_parts)*100,
+percent_ops = total_ops/sum(total_ops)*100) %>%
+filter(area == "ADS") %>%
+select(area,percent_hrs, percent_qty, percent_work, percent_parts, percent_ops) %>%
+gt() %>%
+cols_label(area = "Area",
+percent_hrs = "% of Total Hrs",
+percent_work = "% of Total Work Orders",
+percent_parts = "% of Total Parts",
+percent_ops = "% of Total Operations")
+# engines area summary of hours, qty, parts and work orders percent total of areas
+area_summary %>%
+mutate(percent_hrs = total_hrs/sum(total_hrs)*100,
+percent_qty = total_qty/sum(total_qty)*100,
+percent_work = total_work/sum(total_work)*100,
+percent_parts = total_parts/sum(total_parts)*100,
+percent_ops = total_ops/sum(total_ops)*100) %>%
+filter(area == "ADS") %>%
+select(area,percent_hrs, percent_qty, percent_work, percent_parts, percent_ops) %>%
+gt() %>%
+tab_header(title = ADS Overall)
+# engines area summary of hours, qty, parts and work orders percent total of areas
+area_summary %>%
+mutate(percent_hrs = total_hrs/sum(total_hrs)*100,
+percent_qty = total_qty/sum(total_qty)*100,
+percent_work = total_work/sum(total_work)*100,
+percent_parts = total_parts/sum(total_parts)*100,
+percent_ops = total_ops/sum(total_ops)*100) %>%
+filter(area == "ADS") %>%
+select(area,percent_hrs, percent_qty, percent_work, percent_parts, percent_ops) %>%
+gt() %>%
+tab_header(title = "ADS Overall") %>%
+cols_label(area = "Area",
+percent_hrs = "% of Total Hrs",
+percent_work = "% of Total Work Orders",
+percent_parts = "% of Total Parts",
+percent_ops = "% of Total Operations")
+# engines area summary of hours, qty, parts and work orders percent total of areas
+area_summary %>%
+mutate(percent_hrs = total_hrs/sum(total_hrs)*100,
+percent_qty = total_qty/sum(total_qty)*100,
+percent_work = total_work/sum(total_work)*100,
+percent_parts = total_parts/sum(total_parts)*100,
+percent_ops = total_ops/sum(total_ops)*100) %>%
+filter(area == "ADS") %>%
+select(area,percent_hrs, percent_qty, percent_work, percent_parts, percent_ops)
+# gt() %>%
+# tab_header(title = "ADS Overall") %>%
+# cols_label(area = "Area",
+#            percent_hrs = "% of Total Hrs",
+#            percent_work = "% of Total Work Orders",
+#            percent_parts = "% of Total Parts",
+#            percent_ops = "% of Total Operations")
